@@ -1,5 +1,6 @@
+import { isObject } from "../shared";
 import { track, trigger } from "./effect";
-import { ReactiveFlags } from "./reactive";
+import { reactive, ReactiveFlags, readonly } from "./reactive";
 
 function createGetter(isReadonly = false) {
   return function get(target, key) {
@@ -11,6 +12,10 @@ function createGetter(isReadonly = false) {
 
     if (key === ReactiveFlags.IS_READONLY) {
       return isReadonly
+    }
+
+    if (isObject(res)) {
+      return isReadonly ? readonly(res) : reactive(res);
     }
     // TODO 依赖收集
     if (!isReadonly) {
