@@ -1,5 +1,8 @@
 import { extend } from "../shared";
 
+const targetMap = new Map();
+let activeEffect;
+let shouldTrack;
 class ReavtiveEffect {
   private _fn: any;
   public scheduler: Function | undefined;
@@ -12,8 +15,16 @@ class ReavtiveEffect {
   }
 
   run() {
+    if (!this.active) {
+      return this._fn();
+    }
+    
     activeEffect = this;
-    return this._fn();
+    shouldTrack = true;
+
+    const result = this._fn();
+    shouldTrack = false;
+    return result
   }
 
   stop() {
@@ -33,8 +44,6 @@ function cleanupEffect(effect) {
   })
 }
 
-const targetMap = new Map();
-let activeEffect;
 export function track(target, key) {
   // target -> key -> dep
   let depsMap = targetMap.get(target);
@@ -50,7 +59,8 @@ export function track(target, key) {
   }
 
   if (!activeEffect) return
-  
+
+  if (!shouldTrack) return
   dep.add(activeEffect);
   activeEffect.deps.push(dep);
 }
