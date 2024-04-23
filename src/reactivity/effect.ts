@@ -1,14 +1,36 @@
+import { extend } from "../shared";
+
 class ReavtiveEffect {
   private _fn: any;
-
-  constructor(fn, public scheduler?) {
+  public scheduler: Function | undefined;
+  deps = [];
+  active = true;
+  onStop?: () => void;
+  constructor(fn, scheduler?: Function) {
     this._fn = fn;
+    this.scheduler = scheduler;
   }
 
   run() {
     activeEffect = this;
     return this._fn();
   }
+
+  stop() {
+    if (this.active) {
+      cleanupEffect(this);
+      this.active = false;
+      if (this.onStop) {
+        this.onStop();
+      }
+    }
+  }
+}
+
+function cleanupEffect(effect) {
+  effect.deps.forEach((dep: any) => {
+    dep.delete(effect);
+  })
 }
 
 const targetMap = new Map();
@@ -27,7 +49,10 @@ export function track(target, key) {
     depsMap.set(key, dep);
   }
 
+  if (!activeEffect) return
+  
   dep.add(activeEffect);
+  activeEffect.deps.push(dep);
 }
 
 export function trigger(target, key) {
@@ -46,6 +71,13 @@ export function effect(fn, options: any = {}) {
   const _effect = new ReavtiveEffect(fn, options.scheduler);
 
   _effect.run();
+  extend(_effect, options);
+  const runner: any = _effect.run.bind(_effect);
+  runner.effect = _effect;
 
-  return _effect.run.bind(_effect);
+  return runner;
+}
+
+export function stop(runner) {
+  runner.effect.stop();
 }
