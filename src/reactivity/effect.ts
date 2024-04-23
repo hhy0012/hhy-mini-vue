@@ -42,9 +42,16 @@ function cleanupEffect(effect) {
   effect.deps.forEach((dep: any) => {
     dep.delete(effect);
   })
+  effect.deps.length = 0;
+}
+
+function isTracking() {
+  return shouldTrack && activeEffect !== undefined
 }
 
 export function track(target, key) {
+  if (!isTracking()) return;
+
   // target -> key -> dep
   let depsMap = targetMap.get(target);
   if (!depsMap) {
@@ -58,9 +65,7 @@ export function track(target, key) {
     depsMap.set(key, dep);
   }
 
-  if (!activeEffect) return
-
-  if (!shouldTrack) return
+  if (dep.has(activeEffect)) return;
   dep.add(activeEffect);
   activeEffect.deps.push(dep);
 }
