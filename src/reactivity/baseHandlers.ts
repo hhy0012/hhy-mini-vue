@@ -1,17 +1,27 @@
-import { isObject } from "../shared";
+import { extend, isObject } from "../shared";
 import { track, trigger } from "./effect";
 import { reactive, ReactiveFlags, readonly } from "./reactive";
 
-function createGetter(isReadonly = false) {
+// 缓存，频繁调用
+const get = createGetter();
+const set = createSetter();
+const readonlyGet = createGetter(true);
+const shadowReadonlyGet = createGetter(true, true);
+
+function createGetter(isReadonly = false, shallow = false) {
   return function get(target, key) {
     const res = Reflect.get(target, key);
 
     if (key === ReactiveFlags.IS_REACTIVE) {
-      return !isReadonly
+      return !isReadonly;
     }
 
     if (key === ReactiveFlags.IS_READONLY) {
-      return isReadonly
+      return isReadonly;
+    }
+
+    if (shallow) {
+      return res;
     }
 
     if (isObject(res)) {
@@ -22,7 +32,7 @@ function createGetter(isReadonly = false) {
       track(target, key);
     }
     return res;
-  }
+  };
 }
 
 function createSetter() {
@@ -32,18 +42,26 @@ function createSetter() {
     // TODO 触发依赖
     trigger(target, key);
     return res;
-  }
+  };
 }
 
 export const mutableHandlers = {
-  get: createGetter(),
-  set: createSetter(),
-}
+  get,
+  set,
+};
 
 export const readonlyHandlers = {
-  get: createGetter(true),
+  get: readonlyGet,
   set(target, key, value) {
-    console.warn(`key:${key} cant set, target: ${target} is readonly!`)
-    return true; 
+    console.warn(`key:${key} cant set, target: ${target} is readonly!`);
+    return true;
   },
-}
+};
+
+export const shallowReadonlyHandlers = extend({}, readonlyHandlers,{
+  get: shadowReadonlyGet,
+  set(target, key, value) {
+    console.warn(`key:${key} cant set, target: ${target} is readonly!`);
+    return true;
+  },
+});

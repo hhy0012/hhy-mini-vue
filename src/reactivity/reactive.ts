@@ -1,4 +1,4 @@
-import { mutableHandlers, readonlyHandlers } from "./baseHandlers";
+import { mutableHandlers, readonlyHandlers, shallowReadonlyHandlers } from "./baseHandlers";
 
 function createReactiveObject(raw, baseHandlers) {
   return new Proxy(raw, baseHandlers);
@@ -6,7 +6,7 @@ function createReactiveObject(raw, baseHandlers) {
 
 export const enum ReactiveFlags {
   IS_REACTIVE = "__v_isReactive",
-  IS_READONLY = "__v_isReadonly"
+  IS_READONLY = "__v_isReadonly",
 }
 
 export function reactive(raw) {
@@ -14,13 +14,17 @@ export function reactive(raw) {
 }
 
 export function readonly(raw) {
-  return createReactiveObject(raw, readonlyHandlers)
+  return createReactiveObject(raw, readonlyHandlers);
+}
+
+export function shallowReadonly(raw) {
+  return createReactiveObject(raw, shallowReadonlyHandlers)
 }
 
 export function isReactive(value) {
-  return !!value[ReactiveFlags.IS_REACTIVE]
+  return !!value[ReactiveFlags.IS_REACTIVE];
 }
 
 export function isReadonly(value) {
-  return !!value[ReactiveFlags.IS_READONLY]
+  return !!value[ReactiveFlags.IS_READONLY];
 }
