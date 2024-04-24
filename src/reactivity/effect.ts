@@ -3,7 +3,7 @@ import { extend } from "../shared";
 const targetMap = new Map();
 let activeEffect;
 let shouldTrack;
-class ReavtiveEffect {
+export class ReavtiveEffect {
   private _fn: any;
   public scheduler: Function | undefined;
   deps = [];
